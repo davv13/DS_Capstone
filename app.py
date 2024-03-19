@@ -1,20 +1,14 @@
-import streamlit as st
-from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
-from langchain_core.prompts import ChatPromptTemplate
 import os
-import shutil
-from langchain.schema import Document
-from langchain.vectorstores.chroma import Chroma as ChromaDB
-from langchain.embeddings import OpenAIEmbeddings
-from langchain_community.document_loaders import DirectoryLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 import streamlit as st
-from streamlit.components.v1 import html
+from langchain.chains import ConversationalRetrievalChain
+from langchain.chat_models import ChatOpenAI
+from langchain.document_loaders import DirectoryLoader
+from langchain.indexes.vectorstore import VectorStoreIndexWrapper
+from langchain.indexes import VectorstoreIndexCreator
+from langchain.indexes.vectorstore import VectorStoreIndexWrapper
+from langchain.vectorstores import Chroma
+from langchain_openai import OpenAIEmbeddings
 
-# Load the OpenAI API key from file and set it as an environment variable
 api_key_path = 'openai_api_key.txt'
 try:
     with open(api_key_path, 'r') as f:
@@ -23,86 +17,69 @@ except FileNotFoundError:
     st.error(f"API key file '{api_key_path}' not found. Please make sure the file exists.")
     st.stop()
 
-# Define constants and configurations
-CHROMA_PATH = "chromadb"
-PROMPT_TEMPLATE = """
-Answer the question based only on the following context:
+PERSIST = False
+DATA_DIRECTORY = "data/"
 
-{context}
+st.set_page_config(page_title='Bank Information Retrieval Assistant')
 
----
+st.markdown("""
+    <style>
+        .reportview-container .main .block-container {
+            padding-top: 5rem;
+        }
+        h1 {
+            text-align: center;
+            position: relative;
+            color: #FFF;
+        }
+        .chatbox-container {
+            position: fixed;
+            bottom: 5rem;
+            left: 50%;
+            transform: translate(-50%, 0);
+            width: 90%;
+        }
+        /* New CSS for the chat text */
+        .chat-message {
+            color: white;
+            background-color: #333;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .chat-input {
+            color: white;
+            background-color: #333;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 20px;
+        }
+    </style>
+    <h1>Bank Information Retrieval Assistant</h1>
+""", unsafe_allow_html=True)
 
-Answer the question based on the above context: {question}
-"""
 
-# Streamlit app title and layout configurations
-st.set_page_config(page_title='Bank Information Retrieval Assistant', layout='wide')
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
 
-# Custom CSS
-custom_css = """
-<style>
-    /* Center the title text */
-    h1 {
-        text-align: center;
-    }
-    /* Style for the query input */
-    .stTextInput > div > div > input {
-        color: white;
-        background-color: #333;
-        border: 1px solid #fff;
-        font-size: 1.1em;
-    }
-    /* Style for the response and sources containers */
-    .response-container, .source-container {
-        background-color: black;
-        color: white;
-        border: 1px solid #fff;
-        padding: 10px;
-        border-radius: 5px;
-        font-family: Arial, sans-serif;
-        margin-top: 5px;
-        white-space: pre-wrap;
-    }
-    /* Style for the response and sources text */
-    .response-container p, .source-container p {
-        margin: 0;
-    }
-</style>
-"""
-st.markdown(custom_css, unsafe_allow_html=True)
+if PERSIST and os.path.exists("persist"):
+    vectorstore = Chroma(persist_directory="persist", embedding_function=OpenAIEmbeddings())
+    index = VectorStoreIndexWrapper(vectorstore=vectorstore)
+else:
+    loader = DirectoryLoader(DATA_DIRECTORY)
+    index = VectorstoreIndexCreator().from_loaders([loader])
 
-# Title in the center
-st.markdown('<h1>Bank Information Retrieval Assistant</h1>', unsafe_allow_html=True)
-
-# User input for query
 query_text = st.text_input("", placeholder="Ask a question...", key="query")
 
-# Process the query when Enter is pressed or the button is clicked
-if query_text:
-    response_placeholder = st.empty()
-    source_placeholder = st.empty()
+submit = st.button('Submit')
 
-    embedding_function = OpenAIEmbeddings()
-    db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
-    results = db.similarity_search_with_relevance_scores(query_text, k=3)
+if submit and query_text:
+    query_result = index.query(query_text)
+    
+    st.session_state.chat_history.append(("You:", query_text))
+    st.session_state.chat_history.append(("Bot:", query_result))
+    
+    st.experimental_rerun()
 
-    if not results or results[0][1] < 0.7:
-        response_placeholder.markdown("<div class='response-container'><p>Unable to find matching results.</p></div>", unsafe_allow_html=True)
-    else:
-        context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
-        prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-        prompt = prompt_template.format(context=context_text, question=query_text)
-
-        model = ChatOpenAI()
-        response_text = model.predict(prompt)
-        
-        sources = [doc.metadata.get("source", None) for doc, _score in results]
-        
-        response_placeholder.markdown(
-            f"<div class='response-container'><p>{response_text}</p></div>", 
-            unsafe_allow_html=True
-        )
-        source_placeholder.markdown(
-            f"<div class='source-container'><p>Sources: {', '.join(sources)}</p></div>",
-            unsafe_allow_html=True
-        )
+for message_type, message_text in st.session_state.chat_history:
+    st.text_area(label="", value=f"{message_type} {message_text}", height=75, key=message_text[:20], disabled=True)

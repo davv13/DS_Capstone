@@ -1,0 +1,5 @@
+venv
+.chainlit
+data
+openai_api_key.txt
+spas.ipynb

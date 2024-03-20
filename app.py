@@ -8,20 +8,27 @@ from langchain.indexes import VectorstoreIndexCreator
 from langchain.indexes.vectorstore import VectorStoreIndexWrapper
 from langchain.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
-from dotenv import load_dotenv
 
-load_dotenv()
+st.set_page_config(page_title='Bank Information Retrieval Assistant')
 
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+try:
+    # Try to access the secret key from st.secrets (works in Streamlit Cloud)
+    api_key = st.secrets["OPENAI_API_KEY"]
+except FileNotFoundError:
+    # Fallback for local development, use an environment variable
+    import os
+    api_key = os.getenv('OPENAI_API_KEY')
 
-if not OPENAI_API_KEY:
-    st.error("OpenAI API key not found. Please set it as an environment variable.")
+headers = {
+    "authorization": api_key
+}
+
+if not api_key:
+    st.error("API key not found. Please set it as an environment variable or in secrets.toml.")
     st.stop()
 
 PERSIST = False
 DATA_DIRECTORY = "data/"
-
-st.set_page_config(page_title='Bank Information Retrieval Assistant')
 
 st.markdown("""
     <style>

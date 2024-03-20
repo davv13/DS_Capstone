@@ -1,4 +1,4 @@
 .venv
 data
 openai_api_key.txt
-.env
+secrets.toml

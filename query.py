@@ -1,15 +1,13 @@
 import os
 import sys
-from langchain_community.llms import OpenAI
-import openai
-from langchain.chains import ConversationalRetrievalChain, RetrievalQA
+
+from langchain.vectorstores import Chroma
 from langchain.chat_models import ChatOpenAI
-from langchain.document_loaders import DirectoryLoader, TextLoader
 from langchain_openai import OpenAIEmbeddings
 from langchain.indexes import VectorstoreIndexCreator
+from langchain.document_loaders import DirectoryLoader
+from langchain.chains import ConversationalRetrievalChain
 from langchain.indexes.vectorstore import VectorStoreIndexWrapper
-from langchain_openai import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
 
 with open('openai_api_key.txt','r') as f:
     os.environ["OPENAI_API_KEY"] = f.read()

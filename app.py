@@ -1,13 +1,12 @@
 import os
+import uuid
 import streamlit as st
-from langchain.chains import ConversationalRetrievalChain
-from langchain.chat_models import ChatOpenAI
-from langchain.document_loaders import DirectoryLoader
-from langchain.indexes.vectorstore import VectorStoreIndexWrapper
-from langchain.indexes import VectorstoreIndexCreator
-from langchain.indexes.vectorstore import VectorStoreIndexWrapper
+
 from langchain.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
+from langchain.indexes import VectorstoreIndexCreator
+from langchain.document_loaders import DirectoryLoader
+from langchain.indexes.vectorstore import VectorStoreIndexWrapper
 
 st.set_page_config(page_title='Bank Information Retrieval Assistant')
 
@@ -16,7 +15,6 @@ try:
     api_key = st.secrets["OPENAI_API_KEY"]
 except FileNotFoundError:
     # Fallback for local development, use an environment variable
-    import os
     api_key = os.getenv('OPENAI_API_KEY')
 
 headers = {
@@ -77,7 +75,21 @@ else:
     loader = DirectoryLoader(DATA_DIRECTORY)
     index = VectorstoreIndexCreator().from_loaders([loader])
 
-query_text = st.text_input("", placeholder="Ask a question...", key="query")
+# query_text = st.text_input("", placeholder="Ask a question...", key='Query')
+
+# submit = st.button('Submit')
+
+# if submit and query_text:
+#     query_result = index.query(query_text)
+    
+#     st.session_state.chat_history.append(("You:", query_text))
+#     st.session_state.chat_history.append(("Bot:", query_result))
+    
+#     st.experimental_rerun()
+
+
+
+query_text = st.text_input("", placeholder="Ask a question...", key='Query')
 
 submit = st.button('Submit')
 
@@ -90,4 +102,4 @@ if submit and query_text:
     st.experimental_rerun()
 
 for message_type, message_text in st.session_state.chat_history:
-    st.text_area(label="", value=f"{message_type} {message_text}", height=75, key=message_text[:20], disabled=True)
+    st.text_area(label="", value=f"{message_type} {message_text}", height=75, key=uuid.uuid4(), disabled=True)

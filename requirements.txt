@@ -25,7 +25,7 @@ chromadb==0.4.24
 click==8.1.7
 coloredlogs==15.0.1
 comm==0.2.1
-dataclasses-json==0.6.4
+dataclasses-json
 debugpy==1.8.1
 decorator==5.1.1
 Deprecated==1.2.14

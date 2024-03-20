@@ -11,10 +11,8 @@ from langchain.indexes.vectorstore import VectorStoreIndexWrapper
 st.set_page_config(page_title='Bank Information Retrieval Assistant')
 
 try:
-    # Try to access the secret key from st.secrets (works in Streamlit Cloud)
     api_key = st.secrets["OPENAI_API_KEY"]
 except FileNotFoundError:
-    # Fallback for local development, use an environment variable
     api_key = os.getenv('OPENAI_API_KEY')
 
 headers = {
@@ -75,17 +73,19 @@ else:
     loader = DirectoryLoader(DATA_DIRECTORY)
     index = VectorstoreIndexCreator().from_loaders([loader])
 
-query_text = st.text_input("", placeholder="Ask a question...", key='Query')
+def submit_query():
+    if st.session_state.query_text:
+        query_result = index.query(st.session_state.query_text)
+        
+        st.session_state.chat_history.append(("You:", st.session_state.query_text))
+        st.session_state.chat_history.append(("Bot:", query_result))
 
-submit = st.button('Submit')
+if 'query_text' not in st.session_state:
+    st.session_state['query_text'] = ""
 
-if submit and query_text:
-    query_result = index.query(query_text)
-    
-    st.session_state.chat_history.append(("You:", query_text))
-    st.session_state.chat_history.append(("Bot:", query_result))
-    
-    st.experimental_rerun()
- 
+query_text = st.text_input("", placeholder = "Ask a question...", key="query_text", on_change=submit_query)
+
+submit = st.button('Submit', on_click=submit_query)
+
 for message_type, message_text in st.session_state.chat_history:
     st.text_area(label="", value=f"{message_type} {message_text}", height=75, key=uuid.uuid4(), disabled=True)

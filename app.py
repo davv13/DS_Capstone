@@ -86,6 +86,6 @@ if submit and query_text:
     st.session_state.chat_history.append(("Bot:", query_result))
     
     st.experimental_rerun()
-
+ 
 for message_type, message_text in st.session_state.chat_history:
     st.text_area(label="", value=f"{message_type} {message_text}", height=75, key=uuid.uuid4(), disabled=True)

@@ -75,20 +75,6 @@ else:
     loader = DirectoryLoader(DATA_DIRECTORY)
     index = VectorstoreIndexCreator().from_loaders([loader])
 
-# query_text = st.text_input("", placeholder="Ask a question...", key='Query')
-
-# submit = st.button('Submit')
-
-# if submit and query_text:
-#     query_result = index.query(query_text)
-    
-#     st.session_state.chat_history.append(("You:", query_text))
-#     st.session_state.chat_history.append(("Bot:", query_result))
-    
-#     st.experimental_rerun()
-
-
-
 query_text = st.text_input("", placeholder="Ask a question...", key='Query')
 
 submit = st.button('Submit')

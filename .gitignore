@@ -2,3 +2,4 @@
 data
 openai_api_key.txt
 secrets.toml
+query.py
